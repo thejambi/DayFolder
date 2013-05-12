@@ -1,4 +1,4 @@
 DayFolder
 =========
 
-DayFolder
+DayFolder for Ubuntu.
