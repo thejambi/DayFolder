@@ -33,7 +33,7 @@ public class Main : Object {
 	const string DF_INDICATOR_ICON = "dayfolder-panel";   // Installed	
 
 	// SET THIS TO TRUE BEFORE BUILDING TARBALL
-	private const bool isInstalled = true;
+	private const bool isInstalled = false;
 
 	private Gtk.Window window;
 	private GLib.List<string> fileExtList;
@@ -54,6 +54,12 @@ public class Main : Object {
 	private Gtk.Label lblSrcFolderLocationDisplay;
 	private Gtk.Label lblSubfoldersOption;
 	private Gtk.Label lblDfTypeHeading;
+	private Gtk.Label lblSrcFolderLocationHeading;
+	private Gtk.Label lblDfLocationHeading;
+	private Gtk.Label lblFileNameContains;
+	private Gtk.Label lblMoveFileTo;
+	private Gtk.Button btnSaveFileRule;
+	private Gtk.Button btnRemoveFileRule;
 
 	/**
 	 * Constructor for Main. 
@@ -156,7 +162,7 @@ public class Main : Object {
 		// Main box
 		Gtk.Box mainBox = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		
-		Gtk.Label lblSrcFolderLocationHeading = this.createLabelLeftAlign("<b>Source Folder Location</b>");
+		this.lblSrcFolderLocationHeading = this.createLabelLeftAlign("<b>Source Folder Location</b>");
 		lblSrcFolderLocationHeading.use_markup = true;
 		mainBox.pack_start(lblSrcFolderLocationHeading, false, false, 4);
 
@@ -166,7 +172,7 @@ public class Main : Object {
 
 		Gtk.Box dfLocationHeadingBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
-		Gtk.Label lblDfLocationHeading = this.createLabelLeftAlign("<b>DayFolder Location</b>");
+		this.lblDfLocationHeading = this.createLabelLeftAlign("<b>DayFolder Location</b>");
 		lblDfLocationHeading.use_markup = true;
 		dfLocationHeadingBox.pack_start(lblDfLocationHeading, true, true, 4);
 
@@ -242,13 +248,13 @@ public class Main : Object {
 		// Box for file rule editing stuff
 		Gtk.Box fileRuleEditBox = new Gtk.Box(Gtk.Orientation.VERTICAL, 2);
 
-		Gtk.Label lblFileNameContains = this.createLabelLeftAlign("File name contains (such as a key word or file extention)");
+		this.lblFileNameContains = this.createLabelLeftAlign("File name contains (such as a key word or file extention)");
 		fileRuleEditBox.pack_start(lblFileNameContains, false, true, 2);
 
 		this.txtFileNameContains = new Gtk.Entry();
 		fileRuleEditBox.pack_start(txtFileNameContains, false, true, 2);
 
-		Gtk.Label lblMoveFileTo = this.createLabelLeftAlign("Move file to...");
+		this.lblMoveFileTo = this.createLabelLeftAlign("Move file to...");
 		fileRuleEditBox.pack_start(lblMoveFileTo, false, true, 2);
 
 		// File Rule Destination box
@@ -265,9 +271,9 @@ public class Main : Object {
 
 		// Add and Remove File Rule buttons
 		Gtk.Box fileRuleButtonsBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		Gtk.Button btnRemoveFileRule = new Button.with_label("Remove");
+		this.btnRemoveFileRule = new Button.with_label("Remove");
 		btnRemoveFileRule.clicked.connect(this.btnRemoveFileRuleClicked);
-		Gtk.Button btnSaveFileRule = new Button.with_label("Save");
+		this.btnSaveFileRule = new Button.with_label("Save");
 		btnSaveFileRule.clicked.connect(this.btnSaveFileRuleClicked);
 
 		fileRuleButtonsBox.pack_start(btnRemoveFileRule, false, true, 0);
@@ -625,6 +631,8 @@ public class Main : Object {
 		this.lblDfLocationDisplay.label = UserData.getDfRootPath(currentMonitoredDir);
 
 		// Load the FileExtRules
+		this.txtFileNameContains.text = "";
+		this.txtFileRuleDest.text = "";
 		loadFileExtRulesTreeView();
 	}
 
@@ -742,6 +750,17 @@ public class Main : Object {
 		widgetList.add(this.btnChangeFileRuleDest);
 		widgetList.add(this.txtFileNameContains);
 		widgetList.add(this.txtFileRuleDest);
+		widgetList.add(this.lblSrcFolderLocationDisplay);
+		widgetList.add(this.lblDfLocationDisplay);
+		widgetList.add(this.lblSubfoldersOption);
+		widgetList.add(this.lblDfTypeHeading);
+		widgetList.add(this.lblSrcFolderLocationHeading);
+		widgetList.add(this.lblDfLocationHeading);
+		widgetList.add(this.lblFileNameContains);
+		widgetList.add(this.lblMoveFileTo);
+		widgetList.add(this.tvFileRules);
+		widgetList.add(this.btnSaveFileRule);
+		widgetList.add(this.btnRemoveFileRule);
 
 		return widgetList;
 	}
