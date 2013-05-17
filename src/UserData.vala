@@ -19,7 +19,7 @@
 
 using Gee;
 
-using zystem;
+
 
 namespace dayfolder {
 
@@ -76,12 +76,16 @@ class UserData : GLib.Object {
 		monDir.setDfRootPath(path);
 	}
 
-	public static void addFileRule(string dirPath, string criteria, string destDir) {
+	public static void addFileRule(string dirPath, string criteriaString, string destDir) {
+		Zystem.debug("In UserData.addFileRule");
 		MonitoredDirectory dir = monitoredDirsMap.get(dirPath);
-		dir.addFileRule(criteria, destDir);
 		
-		var rule = new FileContainsRule(criteria, destDir);
-		settings.addFileRule(dirPath, rule);
+		RuleCriteria criteria = new FilenameContainsCriteria(criteriaString);
+		RuleAction action = new MoveFileAction(destDir);
+		Rule rule = new FileContainsRule(criteria, action);
+
+		dir.addRule(rule);
+		settings.addRule(dirPath, rule);
 	}
 
 	/**
@@ -92,7 +96,7 @@ class UserData : GLib.Object {
 
 		foreach (MonitoredDirectory dir in monitoredDirs) {
 			monitoredDirsMap.set(dir.dirPath, dir);
-			Zystem.debug("Loaded Monitored Dir: " + dir.dirPath);
+//			Zystem.debug("Loaded Monitored Dir: " + dir.dirPath);
 		}
 	}
 
@@ -134,7 +138,7 @@ class UserData : GLib.Object {
 	/**
 	 * Returns list of all file rules for the given monitored directory.
 	 */
-	public static ArrayList<DfRule> getFileRules(string monDirPath) {
+	public static ArrayList<Rule> getFileRules(string monDirPath) {
 		Zystem.debug("Calling MonitoredDirectory for fileRules...");
 		var monDir = monitoredDirsMap.get(monDirPath);
 		return monDir.getFileRules();
@@ -160,7 +164,8 @@ class UserData : GLib.Object {
 		var monDir = monitoredDirsMap.get(monDirPath);
 		monDir.removeFileRule(criteria);
 
-		settings.removeFileRule(monDirPath, criteria);
+//		settings.removeFileRule(monDirPath, criteria);
+		Zystem.debug("Cannot remove rule right now.");
 	}
 
 	/**

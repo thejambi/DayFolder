@@ -17,14 +17,10 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using zystem;
-
-namespace dayfolder {
-
 /**
  * File Utility class.
  */
-class FileUtility : GLib.Object {
+class FileUtility : Object {
 
 	/**
 	 * Create a folder (or make sure it exists).
@@ -49,4 +45,12 @@ class FileUtility : GLib.Object {
 }
 
 
+class FileData : Object {
+	public string dirPath { get; set; }
+	public FileInfo fileInfo { get; private set; }
+
+	public FileData(FileInfo fileInfo, string dirPath) {
+		this.fileInfo = fileInfo;
+		this.dirPath = dirPath;
+	}
 }

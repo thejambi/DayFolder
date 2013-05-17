@@ -17,21 +17,19 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace zystem {
-
 /**
  * This class is for random helpful methods.
  */
-class Zystem : GLib.Object {
+class Zystem : Object {
 
 	public static bool debugOn { get; set; default = false; }
 	
 	/**
 	 * My own println method. Hey, I'm a Java programmer!
 	 */
-	public static void println(string s){
-		stdout.printf(s + "\n");
-	}
+	//public static void println(string s){
+	//	stdout.printf(s + "\n");
+	//}
 
 	/**
 	 * Debug method. Only prints if debug is set on.
@@ -52,4 +50,3 @@ class Zystem : GLib.Object {
 	
 }
 
-}

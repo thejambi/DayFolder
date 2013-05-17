@@ -17,7 +17,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using zystem;
+
 
 using Gee;
 
@@ -38,6 +38,7 @@ class MonitoredDirectory : Object {
 	// Settings variables
 	public string dirPath { get; private set; }
 	public string fileExtRulesGroup { get; private set; }
+	public string rulesGroup { get; private set; }
 	public bool useDayFolder { get; set; default = true; }
 	public string dfRootPath { get; private set; }
 	public bool moveDirs { get; set; default = true; }
@@ -45,7 +46,7 @@ class MonitoredDirectory : Object {
 
 	// Other variables
 	public string dayFolderDirPath { get; private set; }
-	private HashMap<string, DfRule> rulesMap;
+	private HashMap<string, Rule> rulesMap;
 
 	/**
 	 * Constructor.
@@ -53,11 +54,12 @@ class MonitoredDirectory : Object {
 	public MonitoredDirectory(string dirPath, bool useDayFolder, string dfRootPath, bool moveDirs, string dfType) {
 		this.dirPath = dirPath;
 		this.fileExtRulesGroup = dirPath + "FileExtRules";
+		this.rulesGroup = dirPath + UserSettingsManager.rulesGroupSuffix;
 		this.useDayFolder = useDayFolder;
 		this.dfRootPath = dfRootPath;
 		this.moveDirs = moveDirs;
 		this.dfType = dfType;
-		this.rulesMap = new HashMap<string, DfRule>();
+		this.rulesMap = new HashMap<string, Rule>();
 	}
 
 	/**
@@ -74,12 +76,21 @@ class MonitoredDirectory : Object {
 		this.dfType = type;
 	}
 
+//~ 	/**
+//~ 	 * Add a FileRule for this monitored directory.
+//~ 	 */
+//~ 	public void addFileRule(string criteria, string destDir) {
+//~ 		var rule = new FileContainsRule(criteria, destDir);
+//~ 		this.rulesMap.set(rule.criteriaString, rule);
+//~ 	}
+
 	/**
-	 * Add a FileRule for this monitored directory.
+	 * NEW
 	 */
-	public void addFileRule(string criteria, string destDir) {
-		var rule = new FileContainsRule(criteria, destDir);
-		this.rulesMap.set(rule.criteriaString, rule);
+	public void addRule(Rule rule) {
+		if (rule != null) {
+			this.rulesMap.set(rule.displayKey, rule);
+		}
 	}
 
 	/**
@@ -92,22 +103,26 @@ class MonitoredDirectory : Object {
 	/**
 	 * Returns list of all file rules.
 	 */
-	public ArrayList<DfRule> getFileRules() {
+	public ArrayList<Rule> getFileRules() {
 		Zystem.debug("In MonitoredDirectory.getFileRules()");
-		ArrayList<DfRule> list = new ArrayList<DfRule>();
+		ArrayList<Rule> list = new ArrayList<Rule>();
 
-		foreach (DfRule rule in rulesMap.values) {
+		foreach (Rule rule in rulesMap.values) {
 			list.add(rule);
 		}
 
 		return list;
 	}
 
-	/**
-	 * Return the FileRule's destination.
-	 */
+//~ 	/**
+//~ 	 * Return the FileRule's destination.
+//~ 	 */
+//~ 	public string getFileRuleDest(string criteria) {
+//~ 		return rulesMap.get(criteria).destinationDir;
+//~ 	}
+
 	public string getFileRuleDest(string criteria) {
-		return rulesMap.get(criteria).destinationDir;
+		return rulesMap.get(criteria).action.displayKey;
 	}
 
 	/**
@@ -122,7 +137,7 @@ class MonitoredDirectory : Object {
 	 * and determines the path to the daily, weekly, or monthly folder.
 	 */
 	private void setDayFolderDirPath() {
-		Zystem.debug("Generating DayFolderDirPath for " + dirPath);
+//		Zystem.debug("Generating DayFolderDirPath for " + dirPath);
 
 		DateTime dateTime = new GLib.DateTime.now_local();
 		string directoryName = "";
@@ -160,11 +175,15 @@ class MonitoredDirectory : Object {
 	 * Debug method.
 	 */
 	public void printDebug() {
-		Zystem.debug("Monitored Directory: " + dirPath);
+//		Zystem.debug("Monitored Directory: " + dirPath);
 
-		Zystem.debug("FileRules: ");
-		foreach (DfRule rule in rulesMap.values) {
-			Zystem.debug(rule.criteriaString);
+//~ 		Zystem.debug("FileRules: ");
+//~ 		foreach (Rule rule in rulesMap.values) {
+//~ 			Zystem.debug(rule.criteriaString);
+//~ 		}
+//		Zystem.debug("Rules:");
+		foreach (Rule rule in this.rulesMap.values) {
+			Zystem.debug(rule.displayKey);
 		}
 	}
 
@@ -184,7 +203,7 @@ class MonitoredDirectory : Object {
 	 * Make sure that today's folder is created, then clean the desktop.
 	 */
 	public void runCleanup() {
-		Zystem.debug("In MonitoredDirectory.runCleanup() for " + this.dirPath);
+//		Zystem.debug("In MonitoredDirectory.runCleanup() for " + this.dirPath);
 
 		this.setDayFolderDirPath();
 
@@ -192,18 +211,19 @@ class MonitoredDirectory : Object {
 
 		try {
 			File desktop = File.new_for_path(this.dirPath);
-			FileEnumerator enumerator = desktop.enumerate_children(FILE_ATTRIBUTE_STANDARD_NAME, 0);
-			FileInfo fileInfo;
+			FileEnumerator enumerator = desktop.enumerate_children(FileAttribute.STANDARD_NAME, 0);
+			FileData fileInfo;
 
 			// Go through the files
-			while((fileInfo = enumerator.next_file()) != null) {
+			while((fileInfo = (FileData)enumerator.next_file()) != null) {
+				fileInfo.dirPath = dirPath;
 				processFile(fileInfo);
 			}
 		} catch(Error e) {
 			stderr.printf ("Error in DayFolder.cleanDesktop(): %s\n", e.message);
 		}
 
-		Zystem.debug("Finished cleaning directory");
+//		Zystem.debug("Finished cleaning directory");
 	}
 
 	/**
@@ -217,31 +237,32 @@ class MonitoredDirectory : Object {
 	/**
 	 * Process the passed file.
 	 */
-	private void processFile(FileInfo file) {
-		Zystem.debugFileInfo(file);
+	private void processFile(FileData file) {
+//~ 		var fileInfo = file.query_info("*", FileQueryInfoFlags.NONE);
+//		Zystem.debugFileInfo(file);
 
-		/* Here'e what we can do.
+		/* Here's what we can do.
 		 * Go through all rules, if it's a match, process the file, or else keep going. 
 		 * After all rules have been gone through, if none matched, just do default move.
 		 */
 
 		bool fileProcessed = false;
 
-		if (file.get_file_type() == FileType.REGULAR) {
-			foreach (DfRule rule in rulesMap.values) {
-				fileProcessed = rule.processFile(file, this.dirPath);
+		if (file.fileInfo.get_file_type() == FileType.REGULAR) {
+			foreach (Rule rule in rulesMap.values) {
+				fileProcessed = rule.processFile(file);
 				if (fileProcessed) {
-					Zystem.debug(file.get_name() + " was processed.");
+//					Zystem.debug(file.get_name() + " was processed.");
 					break;
 				} else {
-					Zystem.debug(file.get_name() + " was NOT processed.");
+//					Zystem.debug(file.get_name() + " was NOT processed.");
 				}
 			}
 		}
 
-		if (!fileProcessed && this.fileShouldMoveToDayFolder(file)) {
-			Zystem.debug("Moving regular file to DayFolder directory");
-			moveFile(file);
+		if (!fileProcessed && this.fileShouldMoveToDayFolder(file.fileInfo)) {
+//			Zystem.debug("Moving regular file to DayFolder directory");
+			moveFile(file.fileInfo);
 		}
 	}
 
@@ -262,7 +283,7 @@ class MonitoredDirectory : Object {
 	 * Actually move the file to where it's supposed to go.
 	 */
 	public void moveFile(FileInfo file, string destDir = "") {
-		Zystem.debug("dayFolderDirPath is: " + dayFolderDirPath);
+//		Zystem.debug("dayFolderDirPath is: " + dayFolderDirPath);
 
 		string fileDestPath = "";
 

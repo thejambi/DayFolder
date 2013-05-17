@@ -25,7 +25,7 @@ using Gdk;
 using AppIndicator;
 
 using dayfolder;
-using zystem;
+
 
 public class Main : Object {
 
@@ -349,12 +349,12 @@ public class Main : Object {
 		TreeIter iter;
 
 		// Get file extension rules settings and add them
-		ArrayList<DfRule> rules = UserData.getFileRules(currentMonitoredDir);
+		ArrayList<Rule> rules = UserData.getFileRules(currentMonitoredDir);
 		
-		foreach (DfRule rule in rules) {
+		foreach (Rule rule in rules) {
 			listmodel.append(out iter);
-			listmodel.set(iter, 0, rule.criteriaString);
-			fileExtList.append(rule.criteriaString);
+			listmodel.set(iter, 0, rule.getCriteriaDisplayKey());
+			fileExtList.append(rule.getCriteriaDisplayKey());
 		}
 	}
 
@@ -477,7 +477,7 @@ public class Main : Object {
 	 * Remove the selected monitored directory.
 	 */
 	public void btnRemoveMonitoredDirClicked(Button button) {
-		Zystem.debug("Removing Monitored Dir...");
+//		Zystem.debug("Removing Monitored Dir...");
 		string dirPath = getSelectedMonitoredDir();
 
 		UserData.removeMonitoredDir(dirPath);
@@ -490,7 +490,7 @@ public class Main : Object {
 	 * When choosing Daily DayFolder.
 	 */
 	public void rdoDayClicked(RadioButton button) {
-		Zystem.debug("Day toggled");
+//		Zystem.debug("Day toggled");
 		if (button.get_active() && UserData.getDfType(currentMonitoredDir) != UserData.dfTypeDaily) {
 			UserData.setDfType(currentMonitoredDir, UserData.dfTypeDaily);
 		}
@@ -500,7 +500,7 @@ public class Main : Object {
 	 * When choosing Weekly DayFolder.
 	 */
 	public void rdoWeekClicked(RadioButton button) {
-		Zystem.debug("Week toggled");
+//		Zystem.debug("Week toggled");
 		if (button.get_active() && UserData.getDfType(this.currentMonitoredDir) != UserData.dfTypeWeekly) {
 			UserData.setDfType(currentMonitoredDir, UserData.dfTypeWeekly);
 		}
@@ -510,7 +510,7 @@ public class Main : Object {
 	 * When choosing Monthly DayFolder.
 	 */
 	public void rdoMonthClicked(RadioButton button) {
-		Zystem.debug("Month toggled");
+//		Zystem.debug("Month toggled");
 		if (button.get_active() && UserData.getDfType(this.currentMonitoredDir) != UserData.dfTypeMonthly) {
 			UserData.setDfType(currentMonitoredDir, UserData.dfTypeMonthly);
 		}
@@ -615,7 +615,7 @@ public class Main : Object {
 	 * 
 	 */
 	private void loadCurrentMonitoredDir() {
-		Zystem.debug("Loading Monitored Directory: " + currentMonitoredDir);
+//		Zystem.debug("Loading Monitored Directory: " + currentMonitoredDir);
 
 		// Set dfType radio button
 		loadDfTypeOption();
@@ -652,7 +652,7 @@ public class Main : Object {
 	 * Set the Use DayFolder option for the currentMonitoredDir and set appropriate widgets disabled.
 	 */
 	private void swUseDayFolderClicked() {
-		Zystem.debug("swUseDayFolder: " + this.swUseDayFolder.active.to_string());
+//		Zystem.debug("swUseDayFolder: " + this.swUseDayFolder.active.to_string());
 
 		UserData.setUseDayFolder(currentMonitoredDir, this.swUseDayFolder.active);
 
@@ -663,7 +663,7 @@ public class Main : Object {
 	 * Set the MoveDirs option to the 
 	 */
 	private void swMoveSubfoldersClicked() {
-		Zystem.debug("swMoveSubfolders: " + this.swMoveSubfolders.active.to_string());
+//		Zystem.debug("swMoveSubfolders: " + this.swMoveSubfolders.active.to_string());
 
 		UserData.setMoveDirs(currentMonitoredDir, this.swMoveSubfolders.active);
 	}

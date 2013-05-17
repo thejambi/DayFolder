@@ -19,7 +19,7 @@
 
 using Gee;
 
-using zystem;
+
 
 namespace dayfolder {
 
@@ -34,7 +34,8 @@ class UserSettingsManager : Object {
 	
 	string dfConfPath;
 
-	const string fileExtRulesGroup = "FileExtRules";
+	//const string fileExtRulesGroup = "FileExtRules";
+	public const string rulesGroupSuffix = "?Rules";
 
 	const string monitoredDirsGroup = "MonitoredDirectories";
 
@@ -50,7 +51,7 @@ class UserSettingsManager : Object {
 		FileUtility.createFolder(settingsDirPath);
 
 		// Get path to df.conf file
-		this.dfConfPath = settingsDirPath + "/df.conf";
+		this.dfConfPath = settingsDirPath + "/dayfolder.conf";
 		
 		// Make sure that settings files exist
 		File settingsFile = File.new_for_path(this.dfConfPath);
@@ -148,7 +149,7 @@ class UserSettingsManager : Object {
 			string[] monitoredDirPaths = keyFile.get_keys(monitoredDirsGroup);
 
 			foreach (string dirPath in monitoredDirPaths) {
-				Zystem.debug(dirPath);
+//				Zystem.debug(dirPath);
 
 				bool useDayFolder = getUseDayFolder(dirPath);
 				string dfRootPath = getDfRootPath(dirPath);
@@ -157,13 +158,33 @@ class UserSettingsManager : Object {
 
 				var monDir = new MonitoredDirectory(dirPath, useDayFolder, dfRootPath, moveDirs, dfType);
 
-				// FileExtRules
+				// FileExtRules	// THIS IS OLD NOW
 				if (keyFile.has_group(monDir.fileExtRulesGroup)) {
 					string[] fileExts = keyFile.get_keys(monDir.fileExtRulesGroup);
 
 					foreach (string ext in fileExts) {
 						Zystem.debug("Adding file rule");
-						monDir.addFileRule(ext, keyFile.get_string(monDir.fileExtRulesGroup, ext));
+//						monDir.addFileRule(ext, keyFile.get_string(monDir.fileExtRulesGroup, ext));
+						/*RuleCriteria criteria = new FilenameContainsCriteria(ext);
+						RuleAction action = new MoveFileAction(keyFile.get_string(monDir.fileExtRulesGroup, ext));
+						Rule rule = new FileContainsRule(criteria, action);
+						monDir.addRule(rule);*/
+					}
+				}
+
+				if (keyFile.has_group(monDir.rulesGroup)) {
+					Zystem.debug("Has rules group!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+					string[] ruleKeys = keyFile.get_keys(monDir.rulesGroup);
+
+					foreach (string key in ruleKeys) {
+						Zystem.debug("Adding rule... well that would be the plan.. but.. yeah!");
+						/*RuleCriteria criteria = new FilenameContainsCriteria(str);
+						RuleAction action = new MoveFileAction(keyFile.get_string(monDir.fileExtRulesGroup, ext));*/
+
+						SettingsRuleEntry ruleEntry = new SettingsRuleEntry(key, keyFile.get_string_list(monDir.rulesGroup, key));
+						
+//						Rule rule = new FileContainsRule(criteria, action);
+						monDir.addRule(ruleEntry.getRule());
 					}
 				}
 
@@ -171,7 +192,7 @@ class UserSettingsManager : Object {
 			}
 		} catch (Error e) {
 			stderr.printf ("Error in UserSettingsManager.getMonitoredDirs(): %s\n", e.message);
-			Zystem.debug("Settings file didn't have MonitoredDir info in it. That's totally fine.");
+//			Zystem.debug("Settings file didn't have MonitoredDir info in it. That's totally fine.");
 		}
 
 		return monitoredDirs;
@@ -180,8 +201,16 @@ class UserSettingsManager : Object {
 	/**
 	 * 
 	 */
-	public void addFileRule(string monDirPath, DfRule rule) {
-		keyFile.set_string(monDirPath + fileExtRulesGroup, rule.criteriaString, rule.destinationDir);
+	//public void addFileRule(string monDirPath, Rule rule) {
+//		keyFile.set_string(monDirPath + fileExtRulesGroup, rule.criteriaString, rule.destinationDir);
+		//writeKeyFile();
+		//Zystem.debug("settings cannot save yet.");
+	//}
+
+	public void addRule(string monDirPath, Rule rule) {
+		string[] ruleStrs = {rule.criteria.kind, rule.action.kind, rule.criteria.displayKey, rule.action.displayKey};
+		
+		keyFile.set_string_list(monDirPath + rulesGroupSuffix, rule.displayKey, ruleStrs);
 		writeKeyFile();
 	}
 
@@ -206,10 +235,10 @@ class UserSettingsManager : Object {
 	/**
 	 * Remove the FileExtRule for the given monitored directory.
 	 */
-	public void removeFileRule(string monDirPath, string criteria) {
+	/*public void removeFileRule(string monDirPath, string criteria) {
 		keyFile.remove_key(monDirPath + fileExtRulesGroup, criteria);
 		writeKeyFile();
-	}
+	}*/
 
 
 	
@@ -223,7 +252,7 @@ class UserSettingsManager : Object {
 		try {
 			useDf = keyFile.get_boolean(dirPath, MonitoredDirectory.useDayFolderKey);
 		} catch (Error e) {
-			Zystem.debug("Could not retrieve UseDayFolder setting. Using default value.");
+//			Zystem.debug("Could not retrieve UseDayFolder setting. Using default value.");
 		}
 
 		return useDf;
@@ -238,10 +267,10 @@ class UserSettingsManager : Object {
 		try {
 			rootPath = keyFile.get_string(dirPath, MonitoredDirectory.dfRootPathKey);
 		} catch (Error e) {
-			Zystem.debug("Could not retrieve DayFolder root path setting. Using default value.");
+//			Zystem.debug("Could not retrieve DayFolder root path setting. Using default value.");
 		}
 
-		Zystem.debug("DayFolder Root Path is: " + rootPath);
+//		Zystem.debug("DayFolder Root Path is: " + rootPath);
 
 		return rootPath;
 	}
@@ -255,7 +284,7 @@ class UserSettingsManager : Object {
 		try {
 			moveDirs = keyFile.get_boolean(dirPath, MonitoredDirectory.moveDirsKey);
 		} catch (Error e) {
-			Zystem.debug("Could not retrieve Move Subfolders setting. Using default value.");
+//			Zystem.debug("Could not retrieve Move Subfolders setting. Using default value.");
 		}
 
 		return moveDirs;
@@ -270,10 +299,58 @@ class UserSettingsManager : Object {
 		try {
 			dfType = keyFile.get_string(dirPath, MonitoredDirectory.dfTypeKey);
 		} catch (Error e) {
-			Zystem.debug("Could not retrieve DayFolder type setting. Using default value.");
+//			Zystem.debug("Could not retrieve DayFolder type setting. Using default value.");
 		}
 
 		return dfType;
+	}
+}
+
+/**
+ * 
+ *********************************/
+class SettingsRuleEntry : Object {
+
+	public string key { get; private set; }
+	public string criteriaType { get; private set; }
+	public string actionType { get; private set; }
+	public string criteriaDisplayKey { get; private set; }
+	public string actionDisplayKey { get; private set; }
+
+	/*string[] ruleStrs = {rule.criteriaType, rule.actionType, rule.criteria.displayKey, rule.action.displayKey};	
+	keyFile.set_string_list(monDirPath + rulesGroupSuffix, rule.displayKey, ruleStrs);*/
+//	public SettingsRuleEntry(string key, string cType, string aType, string cKey, string aKey) {
+	public SettingsRuleEntry(string key, string[] stringGroup) {
+		this.key = key;
+		this.criteriaType = stringGroup[0];
+		this.actionType = stringGroup[1];
+		this.criteriaDisplayKey = stringGroup[2];
+		this.actionDisplayKey = stringGroup[3];
+	}
+
+	public Rule? getRule() {
+		RuleCriteria criteria = null;
+		RuleAction action = null;
+		Rule rule;
+		
+		if (this.criteriaType == RuleCriteria.filenameContainsType) {
+			Zystem.debug("Creating Criteria..");
+			criteria = new FilenameContainsCriteria(this.criteriaDisplayKey);
+		} else {
+			Zystem.debug("bad criteria: " + this.criteriaType);
+		}
+
+		if (this.actionType == RuleAction.moveFileActionType) {
+			Zystem.debug("Creating Action..");
+			action = new MoveFileAction(this.actionDisplayKey);
+		}
+
+		if (null != criteria && null != action) {
+			rule = new FileContainsRule(criteria, action);
+			return rule;
+		}
+
+		return null;
 	}
 }
 
