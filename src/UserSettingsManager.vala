@@ -208,9 +208,9 @@ class UserSettingsManager : Object {
 	//}
 
 	public void addRule(string monDirPath, Rule rule) {
-		string[] ruleStrs = {rule.criteria.kind, rule.action.kind, rule.criteria.displayKey, rule.action.displayKey};
+//		string[] ruleStrs = {rule.criteria.kind, rule.action.kind, rule.criteria.displayKey, rule.action.displayKey};
 		
-		keyFile.set_string_list(monDirPath + rulesGroupSuffix, rule.displayKey, ruleStrs);
+		keyFile.set_string_list(monDirPath + rulesGroupSuffix, rule.displayKey, rule.getSettingsEntryList());
 		writeKeyFile();
 	}
 
@@ -235,10 +235,19 @@ class UserSettingsManager : Object {
 	/**
 	 * Remove the FileExtRule for the given monitored directory.
 	 */
-	/*public void removeFileRule(string monDirPath, string criteria) {
-		keyFile.remove_key(monDirPath + fileExtRulesGroup, criteria);
+	public void removeFileRule(string monDirPath, string criteria) {
+		keyFile.remove_key(monDirPath + rulesGroupSuffix, criteria);
+
+		try {
+			if (keyFile.get_keys(monDirPath + rulesGroupSuffix).length == 0) {
+				keyFile.remove_group(monDirPath + rulesGroupSuffix);
+			}
+		} catch (KeyFileError e) {
+			Zystem.debug("That's probably not good.");
+		}
+		
 		writeKeyFile();
-	}*/
+	}
 
 
 	
@@ -312,37 +321,48 @@ class UserSettingsManager : Object {
 class SettingsRuleEntry : Object {
 
 	public string key { get; private set; }
-	public string criteriaType { get; private set; }
+	private string[] stringList;
+	/*public string criteriaType { get; private set; }
 	public string actionType { get; private set; }
 	public string criteriaDisplayKey { get; private set; }
-	public string actionDisplayKey { get; private set; }
+	public string actionDisplayKey { get; private set; }*/
 
 	/*string[] ruleStrs = {rule.criteriaType, rule.actionType, rule.criteria.displayKey, rule.action.displayKey};	
 	keyFile.set_string_list(monDirPath + rulesGroupSuffix, rule.displayKey, ruleStrs);*/
 //	public SettingsRuleEntry(string key, string cType, string aType, string cKey, string aKey) {
 	public SettingsRuleEntry(string key, string[] stringGroup) {
 		this.key = key;
-		this.criteriaType = stringGroup[0];
+		this.stringList = stringGroup;
+		/*this.criteriaType = stringGroup[0];
 		this.actionType = stringGroup[1];
 		this.criteriaDisplayKey = stringGroup[2];
-		this.actionDisplayKey = stringGroup[3];
+		this.actionDisplayKey = stringGroup[3];*/
 	}
 
 	public Rule? getRule() {
 		RuleCriteria criteria = null;
 		RuleAction action = null;
 		Rule rule;
-		
-		if (this.criteriaType == RuleCriteria.filenameContainsType) {
-			Zystem.debug("Creating Criteria..");
-			criteria = new FilenameContainsCriteria(this.criteriaDisplayKey);
+
+		int i = 0;
+
+		Zystem.debug(this.stringList[i]);
+
+		// The Criteria type comes first. Check that and get all needed values.
+		if (this.stringList[i++] == RuleCriteria.filenameContainsType) {
+			Zystem.debug(this.stringList[i]);
+			criteria = new FilenameContainsCriteria(this.stringList[i++]);
 		} else {
-			Zystem.debug("bad criteria: " + this.criteriaType);
+			Zystem.debug("Hey! Error! Bad criteria type.");
 		}
 
-		if (this.actionType == RuleAction.moveFileActionType) {
-			Zystem.debug("Creating Action..");
-			action = new MoveFileAction(this.actionDisplayKey);
+		Zystem.debug(this.stringList[i]);
+
+		if (this.stringList[i++] == RuleAction.moveFileActionType) {
+			Zystem.debug(this.stringList[i]);
+			action = new MoveFileAction(this.stringList[i++]);
+		} else {
+			Zystem.debug("Hey! Error! Bad action type.");
 		}
 
 		if (null != criteria && null != action) {

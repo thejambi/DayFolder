@@ -38,6 +38,8 @@ interface Rule : GLib.Object {
 	public abstract bool processFile(FileData file);
 
 	public abstract string getCriteriaDisplayKey();
+
+	public abstract string[] getSettingsEntryList();
 }
 
 class FileContainsRule : Object, Rule {
@@ -68,64 +70,35 @@ class FileContainsRule : Object, Rule {
 		this.action = action;
 		this.displayKey = criteria.displayKey;
 	}
-
-//~ 	public bool processFile(FileInfo file, string dirPath) {
-//~ 		bool match = false;
-//~ 
-//~ 		if (this.criteriaString in file.get_name()) {
-//~ 			match = true;
-//~ 			// Process file - Move file to destinationDir
-//~ 			this.moveFile(file, dirPath);
-//~ 			// this.applyRule(file);
-//~ 		}
-//~ 
-//~ 		return match;
-//~ 	}
 	
 	public bool processFile(FileData file) {
-		return this.action.processFile(file);
+		if (this.criteria.fileMeetsCriteria(file)) {
+			return this.action.processFile(file);
+		}
+		return false;
+	}
+
+	public string[] getSettingsEntryList() {
+		//string[] stringList = new string[this.criteria.getSettingsEntryListSize() + this.action.getSettingsEntryListSize()];
+		string[] criteriaStringList = this.criteria.getStringList();
+		string[] actionStringList = this.action.getStringList();
+
+		string[] stringList = new string[criteriaStringList.length + actionStringList.length];
+
+		int i = 0;
+
+		foreach (string s in criteriaStringList) {
+			stringList[i++] = s;
+		}
+		foreach (string s in actionStringList) {
+			stringList[i++] = s;
+		}
+
+		return stringList;
 	}
 
 	public string getCriteriaDisplayKey() {
 		return this.criteria.displayKey;
-	}
-		
-//~ 	/**
-//~ 	 * Actually move the file to where it's supposed to go.
-//~ 	 */
-//~ 	private void moveFile(FileInfo file, string dirPath) {
-//~ 		Zystem.debug("Moving file based on Rule");
-//~ 
-//~ 		string fileDestPath = "";
-//~ 
-//~ 		fileDestPath = this.destinationDir + "/" + file.get_name();
-//~ 		
-//~ 		var destFile = File.new_for_path(fileDestPath);
-//~ 
-//~ 		// If file already exists, add timestamp to file name
-//~ 		if (destFile.query_exists()) {
-//~ 			fileDestPath = this.addTimestampToFilePath(fileDestPath);
-//~ 			destFile = File.new_for_path(fileDestPath);
-//~ 		}
-//~ 
-//~ 		// Only move the file if destination file does not exist. We don't want to write over any files.
-//~ 		if (!destFile.query_exists()) {
-//~ 			GLib.FileUtils.rename(dirPath + "/" + file.get_name(), fileDestPath);
-//~ 		}
-//~ 	}
-
-	/**
-	 * Get the file path with the unique timestamp inserted at end of 
-	 * filename before file extension.
-	 */
-	private string addTimestampToFilePath(string filePath) {
-		DateTime dateTime = new GLib.DateTime.now_local();
-
-		string pathPrefix = filePath.substring(0, filePath.last_index_of("."));
-		string fileExt = filePath.substring(filePath.last_index_of("."));
-		string timestamp = dateTime.format("_%Y%m%d_%H%M%S");
-
-		return pathPrefix + timestamp + fileExt;
 	}
 
 //~ 	public bool isRuleForFile(string fileName){

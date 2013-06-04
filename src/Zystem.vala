@@ -17,6 +17,10 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Gtk;
+
+using dayfolder;
+
 /**
  * This class is for random helpful methods.
  */
@@ -47,6 +51,60 @@ class Zystem : Object {
 		debug("File type: " + file.get_file_type().to_string());
 	}
 
+
+	/**
+	 * Gtk stuff.
+	 ************/
+
+	public static Label createLabelLeftAlign(string? text) {
+		var label = new Gtk.Label(text);
+		label.xalign = 0;
+		return label;
+	}
+
+	/**
+	 * Return index value of currently selected item in passed in TreeView.
+	 */
+	public static int getSelectedFromView(TreeView view) {
+		int index = -1;
+		var selection = view.get_selection() as TreeSelection;
+		selection.set_mode(SelectionMode.SINGLE);
+		TreeModel model;
+		TreeIter iter;
+		if (!selection.get_selected(out model, out iter)) {
+			index = -1;
+		} else {
+			TreePath path = model.get_path(iter);
+			index = int.parse(path.to_string());
+		}
+
+		return index;
+	}
+
+
+
+
+
+
+
+	/**
+	 * This tests rules, criteria, actions.
+	 */
+	public static void testDayFolder() {
+		debug("----------------DOING A CRAZY TEST---------------");
+		// Add monitored dirs
+		var m = new MonitoredDirectory("/home/zach/TestDayFolderSource", true, "/home/zach/TestDayFolder", true, "D");
+
+		// Add rules
+		var c = new FilenameContainsCriteria("test");
+		var a = new DeleteFileAction();
+		var r = new FileContainsRule(c, a);
+		
+		m.addRule(r);
+
+		// Run
+		m.runCleanup();
+	}
 	
 }
 

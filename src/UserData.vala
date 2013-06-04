@@ -36,6 +36,7 @@ class UserData : GLib.Object {
 	public static const string dfTypeMonthly = "M";
 	
 	// Properties
+	public static string currentMonitoredDir { get; set; }
 	public static string desktopDirPath { get; private set; }
 	public static string homeDirPath { get; private set; }
 
@@ -164,8 +165,7 @@ class UserData : GLib.Object {
 		var monDir = monitoredDirsMap.get(monDirPath);
 		monDir.removeFileRule(criteria);
 
-//		settings.removeFileRule(monDirPath, criteria);
-		Zystem.debug("Cannot remove rule right now.");
+		settings.removeFileRule(monDirPath, criteria);
 	}
 
 	/**

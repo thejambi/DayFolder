@@ -87,7 +87,7 @@ class MonitoredDirectory : Object {
 	/**
 	 * NEW
 	 */
-	public void addRule(Rule rule) {
+	public void addRule(Rule? rule) {
 		if (rule != null) {
 			this.rulesMap.set(rule.displayKey, rule);
 		}
@@ -122,7 +122,7 @@ class MonitoredDirectory : Object {
 //~ 	}
 
 	public string getFileRuleDest(string criteria) {
-		return rulesMap.get(criteria).action.displayKey;
+		return rulesMap.get(criteria).action.getDisplayKey();
 	}
 
 	/**
@@ -212,12 +212,14 @@ class MonitoredDirectory : Object {
 		try {
 			File desktop = File.new_for_path(this.dirPath);
 			FileEnumerator enumerator = desktop.enumerate_children(FileAttribute.STANDARD_NAME, 0);
-			FileData fileInfo;
+			FileInfo fileInfo;
+			FileData fileData;
 
 			// Go through the files
-			while((fileInfo = (FileData)enumerator.next_file()) != null) {
-				fileInfo.dirPath = dirPath;
-				processFile(fileInfo);
+			while((fileInfo = enumerator.next_file()) != null) {
+				fileData = new FileData(fileInfo, this.dirPath);
+				fileData.dirPath = dirPath;
+				processFile(fileData);
 			}
 		} catch(Error e) {
 			stderr.printf ("Error in DayFolder.cleanDesktop(): %s\n", e.message);

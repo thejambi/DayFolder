@@ -36,10 +36,7 @@ public class Main : Object {
 	private const bool isInstalled = false;
 
 	private Gtk.Window window;
-	private GLib.List<string> fileExtList;
 	private GLib.List<string> monitoredDirsList;
-	private string currentMonitoredDir;
-	private Gtk.TreeView tvFileRules;
 	private Gtk.TreeView tvMonitoredDirs;
 	private Gtk.RadioButton rdoDaily;
 	private Gtk.RadioButton rdoWeekly;
@@ -60,6 +57,7 @@ public class Main : Object {
 	private Gtk.Label lblMoveFileTo;
 	private Gtk.Button btnSaveFileRule;
 	private Gtk.Button btnRemoveFileRule;
+	private RulesWidget fileRulesBox;
 
 	/**
 	 * Constructor for Main. 
@@ -73,9 +71,8 @@ public class Main : Object {
 		// Create the UserData
 		UserData.initializeUserData();
 
-		fileExtList = new GLib.List<string>();
 		monitoredDirsList = new GLib.List<string>();
-		currentMonitoredDir = "";
+		UserData.currentMonitoredDir = "";
 
 		// Create AppIndicator
 		var indicator = new Indicator("DayFolder", DF_INDICATOR_ICON,
@@ -105,6 +102,18 @@ public class Main : Object {
 		item = new Gtk.MenuItem.with_label("Quit");
 		item.activate.connect(() => { exitDayFolder(); });
 		menu.append(item);
+
+
+
+		// Create the TEST menu item for debugging
+		if (!this.isInstalled) {
+			menu.append(new Gtk.SeparatorMenuItem());
+			item = new Gtk.MenuItem.with_label("TEST");
+			item.activate.connect(() => { Zystem.testDayFolder(); });
+			menu.append(item);
+		}
+
+		
 
 		menu.show_all();
 
@@ -162,17 +171,17 @@ public class Main : Object {
 		// Main box
 		Gtk.Box mainBox = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
 		
-		this.lblSrcFolderLocationHeading = this.createLabelLeftAlign("<b>Source Folder Location</b>");
+		this.lblSrcFolderLocationHeading = Zystem.createLabelLeftAlign("<b>Source Folder Location</b>");
 		lblSrcFolderLocationHeading.use_markup = true;
 		mainBox.pack_start(lblSrcFolderLocationHeading, false, false, 4);
 
-		this.lblSrcFolderLocationDisplay = this.createLabelLeftAlign(null);
+		this.lblSrcFolderLocationDisplay = Zystem.createLabelLeftAlign(null);
 		lblSrcFolderLocationDisplay.label = "";
 		mainBox.pack_start(lblSrcFolderLocationDisplay, false, true, 4);
 
 		Gtk.Box dfLocationHeadingBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
-		this.lblDfLocationHeading = this.createLabelLeftAlign("<b>DayFolder Location</b>");
+		this.lblDfLocationHeading = Zystem.createLabelLeftAlign("<b>DayFolder Location</b>");
 		lblDfLocationHeading.use_markup = true;
 		dfLocationHeadingBox.pack_start(lblDfLocationHeading, true, true, 4);
 
@@ -184,7 +193,7 @@ public class Main : Object {
 
 		Gtk.Box dfLocationDisplayBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
-		this.lblDfLocationDisplay = this.createLabelLeftAlign(null);
+		this.lblDfLocationDisplay = Zystem.createLabelLeftAlign(null);
 		lblDfLocationDisplay.label = "";
 		dfLocationDisplayBox.pack_start(lblDfLocationDisplay, true, true, 4);
 
@@ -196,7 +205,7 @@ public class Main : Object {
 
 		Gtk.Box subfoldersOptionBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
-		this.lblSubfoldersOption = this.createLabelLeftAlign("Also move subfolders to DayFolder");
+		this.lblSubfoldersOption = Zystem.createLabelLeftAlign("Also move subfolders to DayFolder");
 		lblSubfoldersOption.xalign = 0;
 		subfoldersOptionBox.pack_start(lblSubfoldersOption, true, true, 4);
 
@@ -207,7 +216,7 @@ public class Main : Object {
 
 		mainBox.pack_start(subfoldersOptionBox, false, true, 4);
 
-		this.lblDfTypeHeading = this.createLabelLeftAlign("<b>DayFolder Type</b>");
+		this.lblDfTypeHeading = Zystem.createLabelLeftAlign("<b>DayFolder Type</b>");
 		lblDfTypeHeading.use_markup = true;
 		mainBox.pack_start(lblDfTypeHeading, false, true, 4);
 
@@ -231,58 +240,13 @@ public class Main : Object {
 		// Spacer
 		Gtk.Label lblSpacer = new Gtk.Label("");
 		lblSpacer.width_request = 20;
-		lblSpacer.height_request = 30;
+		lblSpacer.height_request = 5;
 
 		mainBox.pack_start(lblSpacer, false, true, 2);
 
-		// Box for File Rules
-		Gtk.Box fileRulesBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 2);
+		////////////////
 
-		this.tvFileRules = new Gtk.TreeView();
-		// Setup treeview
-		this.setupFileRulesListView();
-		tvFileRules.insert_column_with_attributes(-1, "File Rules", new CellRendererText(), "text", 0);
-
-		fileRulesBox.pack_start(tvFileRules, true, true, 2);
-		
-		// Box for file rule editing stuff
-		Gtk.Box fileRuleEditBox = new Gtk.Box(Gtk.Orientation.VERTICAL, 2);
-
-		this.lblFileNameContains = this.createLabelLeftAlign("File name contains (such as a key word or file extention)");
-		fileRuleEditBox.pack_start(lblFileNameContains, false, true, 2);
-
-		this.txtFileNameContains = new Gtk.Entry();
-		fileRuleEditBox.pack_start(txtFileNameContains, false, true, 2);
-
-		this.lblMoveFileTo = this.createLabelLeftAlign("Move file to...");
-		fileRuleEditBox.pack_start(lblMoveFileTo, false, true, 2);
-
-		// File Rule Destination box
-		Gtk.Box fileRuleDestBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		
-		this.txtFileRuleDest = new Gtk.Entry();
-		fileRuleDestBox.pack_start(txtFileRuleDest, true, true, 0);
-
-		this.btnChangeFileRuleDest = new Gtk.Button.from_stock(Gtk.Stock.OPEN);
-		btnChangeFileRuleDest.clicked.connect(this.btnChangeFileRuleDestClicked);
-		fileRuleDestBox.pack_start(btnChangeFileRuleDest, false, true, 2);
-
-		fileRuleEditBox.pack_start(fileRuleDestBox, false, true, 0);
-
-		// Add and Remove File Rule buttons
-		Gtk.Box fileRuleButtonsBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-		this.btnRemoveFileRule = new Button.with_label("Remove");
-		btnRemoveFileRule.clicked.connect(this.btnRemoveFileRuleClicked);
-		this.btnSaveFileRule = new Button.with_label("Save");
-		btnSaveFileRule.clicked.connect(this.btnSaveFileRuleClicked);
-
-		fileRuleButtonsBox.pack_start(btnRemoveFileRule, false, true, 0);
-		fileRuleButtonsBox.pack_start(btnSaveFileRule, false, true, 0);
-
-		fileRuleEditBox.pack_start(fileRuleButtonsBox, true, true, 0);
-
-
-		fileRulesBox.pack_start(fileRuleEditBox, false, true, 2);
+		this.fileRulesBox = new RulesWidget();
 
 		mainBox.pack_start(fileRulesBox, false, true, 2);
 
@@ -315,48 +279,9 @@ public class Main : Object {
 		this.loadMonitoredDirsView();
 	}
 
-	/**
-	 * 
-	 */
-	private void setupFileRulesListView() {
-		var listmodel = new ListStore(1, typeof(string));
-		this.tvFileRules.model = listmodel;
+	
 
-		var treeSelection = this.tvFileRules.get_selection();
-		treeSelection.set_mode(SelectionMode.SINGLE);
-		treeSelection.changed.connect(() => {
-			this.fileExtRuleSelected();
-		});
-	}
-
-	private Label createLabelLeftAlign(string? text) {
-		var label = new Gtk.Label(text);
-		label.xalign = 0;
-		return label;
-	}
-
-	/**
-	 * Load the user's File Extension Rules.
-	 */
-	private void loadFileExtRulesTreeView() {
-		Zystem.debug("Loading FileExtRule TreeView...");
-		
-		var listmodel = this.tvFileRules.model as ListStore;
-
-		listmodel.clear();
-		fileExtList = new GLib.List<string>();
-
-		TreeIter iter;
-
-		// Get file extension rules settings and add them
-		ArrayList<Rule> rules = UserData.getFileRules(currentMonitoredDir);
-		
-		foreach (Rule rule in rules) {
-			listmodel.append(out iter);
-			listmodel.set(iter, 0, rule.getCriteriaDisplayKey());
-			fileExtList.append(rule.getCriteriaDisplayKey());
-		}
-	}
+	
 
 	/**
 	 * Load the Monitored Directories TreeView.
@@ -386,7 +311,7 @@ public class Main : Object {
 	 */
 	private void loadDfTypeOption() {
 		// Get dfType option
-		string dfType = UserData.getDfType(currentMonitoredDir);
+		string dfType = UserData.getDfType(UserData.currentMonitoredDir);
 
 		if (dfType == UserData.dfTypeDaily) {
 			this.rdoDaily.activate();
@@ -404,33 +329,8 @@ public class Main : Object {
 		Gtk.main_quit();
 	}
 
-	/**
-	 * 
-	 */
-	public void btnSaveFileRuleClicked() {
-		UserData.addFileRule(currentMonitoredDir, this.txtFileNameContains.text, this.txtFileRuleDest.text);
-		this.txtFileNameContains.text = "";
-		this.txtFileRuleDest.text = "";
-		loadFileExtRulesTreeView();
-	}
-
-	/**
-	 * 
-	 */
-	public void btnChangeFileRuleDestClicked() {
-		var window = this.window;
-		var txtDestDir = this.txtFileRuleDest;
-		
-		var fileChooser = new FileChooserDialog("Choose File Rule Destination", window,
-		                                        FileChooserAction.SELECT_FOLDER,
-		                                        Stock.CANCEL, ResponseType.CANCEL,
-		                                        Stock.OPEN, ResponseType.ACCEPT);
-		if (fileChooser.run() == ResponseType.ACCEPT) {
-			string dirPath = fileChooser.get_filename();
-			txtDestDir.text = dirPath;
-		}
-		fileChooser.destroy();
-	}
+	
+	
 
 	/**
 	 * Closing a dialog.
@@ -452,26 +352,13 @@ public class Main : Object {
 		                                        Stock.OPEN, ResponseType.ACCEPT);
 		if (fileChooser.run() == ResponseType.ACCEPT) {
 			string path = fileChooser.get_filename();
-			UserData.setDfRootPath(currentMonitoredDir, path);
+			UserData.setDfRootPath(UserData.currentMonitoredDir, path);
 			this.lblDfLocationDisplay.label = path;
 		}
 		fileChooser.destroy();
 	}
 
-	/**
-	 * 
-	 */
-	public void btnRemoveFileRuleClicked() {
-		string fileCriteriaString = getSelectedFileExt();
-
-		UserData.removeFileRule(currentMonitoredDir, fileCriteriaString);
-
-		this.txtFileNameContains.text = "";
-		this.txtFileRuleDest.text = "";
-
-		// Reload the treeview
-		loadFileExtRulesTreeView();
-	}
+	
 
 	/**
 	 * Remove the selected monitored directory.
@@ -491,8 +378,8 @@ public class Main : Object {
 	 */
 	public void rdoDayClicked(RadioButton button) {
 //		Zystem.debug("Day toggled");
-		if (button.get_active() && UserData.getDfType(currentMonitoredDir) != UserData.dfTypeDaily) {
-			UserData.setDfType(currentMonitoredDir, UserData.dfTypeDaily);
+		if (button.get_active() && UserData.getDfType(UserData.currentMonitoredDir) != UserData.dfTypeDaily) {
+			UserData.setDfType(UserData.currentMonitoredDir, UserData.dfTypeDaily);
 		}
 	}
 
@@ -501,8 +388,8 @@ public class Main : Object {
 	 */
 	public void rdoWeekClicked(RadioButton button) {
 //		Zystem.debug("Week toggled");
-		if (button.get_active() && UserData.getDfType(this.currentMonitoredDir) != UserData.dfTypeWeekly) {
-			UserData.setDfType(currentMonitoredDir, UserData.dfTypeWeekly);
+		if (button.get_active() && UserData.getDfType(UserData.currentMonitoredDir) != UserData.dfTypeWeekly) {
+			UserData.setDfType(UserData.currentMonitoredDir, UserData.dfTypeWeekly);
 		}
 	}
 
@@ -511,8 +398,8 @@ public class Main : Object {
 	 */
 	public void rdoMonthClicked(RadioButton button) {
 //		Zystem.debug("Month toggled");
-		if (button.get_active() && UserData.getDfType(this.currentMonitoredDir) != UserData.dfTypeMonthly) {
-			UserData.setDfType(currentMonitoredDir, UserData.dfTypeMonthly);
+		if (button.get_active() && UserData.getDfType(UserData.currentMonitoredDir) != UserData.dfTypeMonthly) {
+			UserData.setDfType(UserData.currentMonitoredDir, UserData.dfTypeMonthly);
 		}
 	}
 
@@ -551,33 +438,9 @@ public class Main : Object {
 		loadMonitoredDirsView();
 	}
 
-	/**
-	 * This method is connected to the signal in the code when the settings window 
-	 * was created. 
-	 */
-	private void fileExtRuleSelected() {
-		string fileExt = getSelectedFileExt();
+	
 
-		this.txtFileNameContains.text = fileExt;
-		this.txtFileRuleDest.text = UserData.getFileRuleDest(currentMonitoredDir, fileExt);
-	}
-
-	/**
-	 * Get the file extension of the currently selected FileExtRule.
-	 */
-	private string getSelectedFileExt() {
-		string fileExt = "";
-
-		var view = this.tvFileRules;
-
-		int index = getSelectedFromView(view);
-
-		if (index >= 0) {
-			fileExt = fileExtList.nth_data(index);
-		}
-
-		return fileExt;
-	}
+	
 
 	/**
 	 * Called when a monitored directory is selected.
@@ -589,7 +452,7 @@ public class Main : Object {
 		string monDirPath = getSelectedMonitoredDir();
 
 		if (monDirPath != "") {
-			currentMonitoredDir = monDirPath;
+			UserData.currentMonitoredDir = monDirPath;
 			loadCurrentMonitoredDir();
 		}
 	}
@@ -602,7 +465,7 @@ public class Main : Object {
 
 		var view = this.tvMonitoredDirs;
 
-		int index = getSelectedFromView(view);
+		int index = Zystem.getSelectedFromView(view);
 
 		if (index >= 0) {
 			dirPath = monitoredDirsList.nth_data(index);
@@ -615,7 +478,7 @@ public class Main : Object {
 	 * 
 	 */
 	private void loadCurrentMonitoredDir() {
-//		Zystem.debug("Loading Monitored Directory: " + currentMonitoredDir);
+//		Zystem.debug("Loading Monitored Directory: " + UserData.currentMonitoredDir);
 
 		// Set dfType radio button
 		loadDfTypeOption();
@@ -625,19 +488,19 @@ public class Main : Object {
 		this.setSwUseDayFolder();
 
 		// Set Source Location label text
-		this.lblSrcFolderLocationDisplay.label = UserData.getSourcePath(currentMonitoredDir);
+		this.lblSrcFolderLocationDisplay.label = UserData.getSourcePath(UserData.currentMonitoredDir);
 
 		// Set DayFolder root path label text
-		this.lblDfLocationDisplay.label = UserData.getDfRootPath(currentMonitoredDir);
+		this.lblDfLocationDisplay.label = UserData.getDfRootPath(UserData.currentMonitoredDir);
 
 		// Load the FileExtRules
 		this.txtFileNameContains.text = "";
 		this.txtFileRuleDest.text = "";
-		loadFileExtRulesTreeView();
+		this.fileRulesBox.loadFileExtRulesTreeView();
 	}
 
 	private void setSwUseDayFolder() {
-		bool useDayFolder = UserData.getUseDayFolder(currentMonitoredDir);
+		bool useDayFolder = UserData.getUseDayFolder(UserData.currentMonitoredDir);
 
 		this.swUseDayFolder.active = useDayFolder;
 
@@ -645,16 +508,16 @@ public class Main : Object {
 	}
 
 	private void setSwMoveSubfolders() {
-		this.swMoveSubfolders.active = UserData.getMoveDirs(currentMonitoredDir);
+		this.swMoveSubfolders.active = UserData.getMoveDirs(UserData.currentMonitoredDir);
 	}
 
 	/**
-	 * Set the Use DayFolder option for the currentMonitoredDir and set appropriate widgets disabled.
+	 * Set the Use DayFolder option for the UserData.currentMonitoredDir and set appropriate widgets disabled.
 	 */
 	private void swUseDayFolderClicked() {
 //		Zystem.debug("swUseDayFolder: " + this.swUseDayFolder.active.to_string());
 
-		UserData.setUseDayFolder(currentMonitoredDir, this.swUseDayFolder.active);
+		UserData.setUseDayFolder(UserData.currentMonitoredDir, this.swUseDayFolder.active);
 
 		this.enableUseDayFolderControls(this.swUseDayFolder.active);
 	}
@@ -665,27 +528,10 @@ public class Main : Object {
 	private void swMoveSubfoldersClicked() {
 //		Zystem.debug("swMoveSubfolders: " + this.swMoveSubfolders.active.to_string());
 
-		UserData.setMoveDirs(currentMonitoredDir, this.swMoveSubfolders.active);
+		UserData.setMoveDirs(UserData.currentMonitoredDir, this.swMoveSubfolders.active);
 	}
 
-	/**
-	 * Return index value of currently selected item in passed in TreeView.
-	 */
-	private int getSelectedFromView(TreeView view) {
-		int index = -1;
-		var selection = view.get_selection() as TreeSelection;
-		selection.set_mode(SelectionMode.SINGLE);
-		TreeModel model;
-		TreeIter iter;
-		if (!selection.get_selected(out model, out iter)) {
-			index = -1;
-		} else {
-			TreePath path = model.get_path(iter);
-			index = int.parse(path.to_string());
-		}
-
-		return index;
-	}
+	
 	
 	/**
 	 * Disable GUI controls.
@@ -758,7 +604,7 @@ public class Main : Object {
 		widgetList.add(this.lblDfLocationHeading);
 		widgetList.add(this.lblFileNameContains);
 		widgetList.add(this.lblMoveFileTo);
-		widgetList.add(this.tvFileRules);
+		//widgetList.add(this.tvFileRules);
 		widgetList.add(this.btnSaveFileRule);
 		widgetList.add(this.btnRemoveFileRule);
 

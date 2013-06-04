@@ -41,6 +41,20 @@ class FileUtility : Object {
 	public static string pathCombine(string pathStart, string pathEnd) {
 		return Path.build_path(Path.DIR_SEPARATOR_S, pathStart, pathEnd);
 	}
+
+	/**
+	 * Get the file path with the unique timestamp inserted at end of 
+	 * filename before file extension.
+	 */
+	public static string addTimestampToFilePath(string filePath) {
+		DateTime dateTime = new GLib.DateTime.now_local();
+
+		string pathPrefix = filePath.substring(0, filePath.last_index_of("."));
+		string fileExt = filePath.substring(filePath.last_index_of("."));
+		string timestamp = dateTime.format("_%Y%m%d_%H%M%S");
+
+		return pathPrefix + timestamp + fileExt;
+	}
 	
 }
 
@@ -48,9 +62,11 @@ class FileUtility : Object {
 class FileData : Object {
 	public string dirPath { get; set; }
 	public FileInfo fileInfo { get; private set; }
+	public File fileObject { get; private set; }
 
 	public FileData(FileInfo fileInfo, string dirPath) {
 		this.fileInfo = fileInfo;
 		this.dirPath = dirPath;
+		this.fileObject = File.new_for_path(FileUtility.pathCombine(this.dirPath, fileInfo.get_name()));
 	}
 }
