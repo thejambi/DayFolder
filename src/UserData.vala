@@ -30,6 +30,11 @@ namespace dayfolder {
  */
 class UserData : GLib.Object {
 
+	public static const string filenameContainsCriteriaString = "File name contains";
+	public static const string moveFileActionString = "Move file to a folder";
+	public static const string copyFileActionString = "Copy file to a folder";
+	public static const string deleteFileActionString = "Move file to trash";
+
 	// static const variables
 	public static const string dfTypeDaily = "D";
 	public static const string dfTypeWeekly = "W";
@@ -77,6 +82,7 @@ class UserData : GLib.Object {
 		monDir.setDfRootPath(path);
 	}
 
+	/*
 	public static void addFileRule(string dirPath, string criteriaString, string destDir) {
 		Zystem.debug("In UserData.addFileRule");
 		MonitoredDirectory dir = monitoredDirsMap.get(dirPath);
@@ -87,6 +93,15 @@ class UserData : GLib.Object {
 
 		dir.addRule(rule);
 		settings.addRule(dirPath, rule);
+	}
+	*/
+
+	public static void addRule(Rule rule) {
+		Zystem.debug("Hey, I'm gonna add this rule now, k?");
+		MonitoredDirectory dir = monitoredDirsMap.get(currentMonitoredDir);
+
+		dir.addRule(rule);
+		settings.addRule(currentMonitoredDir, rule);
 	}
 
 	/**

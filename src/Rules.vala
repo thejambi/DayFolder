@@ -68,7 +68,7 @@ class FileContainsRule : Object, Rule {
 	public FileContainsRule(RuleCriteria criteria, RuleAction action) {
 		this.criteria = criteria;
 		this.action = action;
-		this.displayKey = criteria.displayKey;
+		this.displayKey = criteria.getDisplayKey();
 	}
 	
 	public bool processFile(FileData file) {
@@ -98,7 +98,7 @@ class FileContainsRule : Object, Rule {
 	}
 
 	public string getCriteriaDisplayKey() {
-		return this.criteria.displayKey;
+		return this.criteria.getDisplayKey();
 	}
 
 //~ 	public bool isRuleForFile(string fileName){

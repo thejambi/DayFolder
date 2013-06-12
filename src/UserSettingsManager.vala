@@ -349,7 +349,7 @@ class SettingsRuleEntry : Object {
 		Zystem.debug(this.stringList[i]);
 
 		// The Criteria type comes first. Check that and get all needed values.
-		if (this.stringList[i++] == RuleCriteria.filenameContainsType) {
+		if (this.stringList[i++] == CriteriaType.fileNameContains.toString()) {
 			Zystem.debug(this.stringList[i]);
 			criteria = new FilenameContainsCriteria(this.stringList[i++]);
 		} else {
@@ -358,9 +358,16 @@ class SettingsRuleEntry : Object {
 
 		Zystem.debug(this.stringList[i]);
 
-		if (this.stringList[i++] == RuleAction.moveFileActionType) {
+		string maybeAction = this.stringList[i++];
+		Zystem.debug(maybeAction);
+
+		if (maybeAction == ActionType.moveFile.toString()) {
 			Zystem.debug(this.stringList[i]);
 			action = new MoveFileAction(this.stringList[i++]);
+		} else if (maybeAction == ActionType.copyFile.toString()) {
+			action = new CopyFileAction(this.stringList[i++]);
+		} else if (maybeAction == ActionType.deleteFile.toString()) {
+			action = new DeleteFileAction();
 		} else {
 			Zystem.debug("Hey! Error! Bad action type.");
 		}

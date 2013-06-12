@@ -55,7 +55,7 @@ public class Main : Object {
 	private Gtk.Label lblDfLocationHeading;
 	private Gtk.Label lblFileNameContains;
 	private Gtk.Label lblMoveFileTo;
-	private Gtk.Button btnSaveFileRule;
+	//private Gtk.Button btnSaveFileRule;
 	private Gtk.Button btnRemoveFileRule;
 	private RulesWidget fileRulesBox;
 
@@ -605,7 +605,7 @@ public class Main : Object {
 		widgetList.add(this.lblFileNameContains);
 		widgetList.add(this.lblMoveFileTo);
 		//widgetList.add(this.tvFileRules);
-		widgetList.add(this.btnSaveFileRule);
+		//widgetList.add(this.btnSaveFileRule);
 		widgetList.add(this.btnRemoveFileRule);
 
 		return widgetList;
