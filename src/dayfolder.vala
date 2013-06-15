@@ -58,6 +58,7 @@ public class Main : Object {
 	//private Gtk.Button btnSaveFileRule;
 	private Gtk.Button btnRemoveFileRule;
 	private RulesWidget fileRulesBox;
+	private Gtk.Label monDirMsgLabel;
 
 	/**
 	 * Constructor for Main. 
@@ -93,9 +94,9 @@ public class Main : Object {
 		menu.append(item);
 
 		// Create the Go To DayFolder menu item
-		item = new Gtk.MenuItem.with_label("View DayFolder");
+		/*item = new Gtk.MenuItem.with_label("View DayFolder");
 		item.activate.connect(() => { openTodaysFolderClicked(); });
-		menu.append(item);
+		menu.append(item);*/
 
 		// Create the Quit menu item
 		menu.append(new Gtk.SeparatorMenuItem());
@@ -125,13 +126,13 @@ public class Main : Object {
 	/**
 	 * Opens the DayFolder root directory for user.
 	 */
-	private void openTodaysFolderClicked() {
+	/*private void openTodaysFolderClicked() {
 		try {
 			Gtk.show_uri(null, "file://" + UserData.getDefaultDfRootPath(), Gdk.CURRENT_TIME);
 		} catch(Error e) {
 			stderr.printf ("Error opening folder: %s\n", e.message);
 		}
-	}
+	}*/
 
 	/**
 	 * Create and show the settings window.
@@ -159,10 +160,13 @@ public class Main : Object {
 		Gtk.Button btnRemoveMonitoredDir = new Gtk.Button.with_label("Remove");
 		btnRemoveMonitoredDir.clicked.connect(() => { btnRemoveMonitoredDirClicked(btnRemoveMonitoredDir); });
 
+		this.monDirMsgLabel = new Gtk.Label("");
+
 		Gtk.Box leftSideButtonBox = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
 
 		leftSideButtonBox.pack_start(btnAddMonitoredDir, false, true, 0);
 		leftSideButtonBox.pack_start(btnRemoveMonitoredDir, false, true, 0);
+		leftSideButtonBox.pack_start(this.monDirMsgLabel, false, true, 6);
 
 		leftSideBox.pack_start(leftSideButtonBox, false, true, 0);
 		leftSideBox.width_request = 160;
@@ -287,6 +291,8 @@ public class Main : Object {
 	 * Load the Monitored Directories TreeView.
 	 */
 	private void loadMonitoredDirsView() {
+		this.monDirMsgLabel.label = "";
+		
 		var listmodel = this.tvMonitoredDirs.model as ListStore;
 
 		listmodel.clear();
@@ -354,6 +360,7 @@ public class Main : Object {
 			string path = fileChooser.get_filename();
 			UserData.setDfRootPath(UserData.currentMonitoredDir, path);
 			this.lblDfLocationDisplay.label = path;
+			this.setSwMoveSubfolders();
 		}
 		fileChooser.destroy();
 	}
@@ -423,6 +430,11 @@ public class Main : Object {
 	 * This is the process of adding a new monitored directory.
 	 */
 	private void addMonitoredDir(string path) {
+		if (!UserData.canMonitorThisDir(path)) {
+			this.monDirMsgLabel.label = "Cannot monitor " + path;
+			return;
+		}
+		
 		// Add to TreeView
 		var listmodel = this.tvMonitoredDirs.model as ListStore;
 
@@ -446,6 +458,8 @@ public class Main : Object {
 	 * Called when a monitored directory is selected.
 	 */
 	private void monitoredDirSelected() {
+		this.monDirMsgLabel.label = "";
+		
 		// Enable controls
 		enableControls();
 		
@@ -478,14 +492,14 @@ public class Main : Object {
 	 * 
 	 */
 	private void loadCurrentMonitoredDir() {
-//		Zystem.debug("Loading Monitored Directory: " + UserData.currentMonitoredDir);
+		Zystem.debug("Loading Monitored Directory: " + UserData.currentMonitoredDir);
 
 		// Set dfType radio button
 		loadDfTypeOption();
 
 		// Set switches
-		this.setSwMoveSubfolders();
 		this.setSwUseDayFolder();
+		this.setSwMoveSubfolders();
 
 		// Set Source Location label text
 		this.lblSrcFolderLocationDisplay.label = UserData.getSourcePath(UserData.currentMonitoredDir);
@@ -509,6 +523,21 @@ public class Main : Object {
 
 	private void setSwMoveSubfolders() {
 		this.swMoveSubfolders.active = UserData.getMoveDirs(UserData.currentMonitoredDir);
+
+//		bool isHomeFolder = UserData.monDirIsHomeFolder();
+		bool dirSameAsDf = UserData.monDirIsSameAsDf();
+
+//		Zystem.debug("HOWDY! isHomeFolder is " + isHomeFolder.to_string());
+		Zystem.debug("HOWDY! dirSameAsDf is " + dirSameAsDf.to_string());
+
+		if (dirSameAsDf) {
+			this.swMoveSubfolders.active = false;
+			this.swMoveSubfolders.set_sensitive(false);
+			this.lblSubfoldersOption.set_sensitive(false);
+		} else {
+			this.swMoveSubfolders.set_sensitive(true);
+			this.lblSubfoldersOption.set_sensitive(true);
+		}
 	}
 
 	/**
@@ -520,6 +549,7 @@ public class Main : Object {
 		UserData.setUseDayFolder(UserData.currentMonitoredDir, this.swUseDayFolder.active);
 
 		this.enableUseDayFolderControls(this.swUseDayFolder.active);
+		this.setSwMoveSubfolders();
 	}
 	
 	/**

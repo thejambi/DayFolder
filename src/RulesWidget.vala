@@ -32,6 +32,9 @@ public class RulesWidget : Gtk.Box {
 	private Gtk.Button btnChangeFileRuleDest;
 	private Gtk.Button btnSaveFileRule;
 	private Gtk.Button btnRemoveFileRule;
+	private Gtk.ComboBox criteriaComboBox;
+	private Gtk.ComboBox actionComboBox;
+	private Gtk.Label ruleMsgLabel;
 
 	private CriteriaType selectedCriteriaType;
 	private ActionType selectedActionType;
@@ -79,7 +82,7 @@ public class RulesWidget : Gtk.Box {
 		}
 
 		// The Box:
-		Gtk.ComboBox criteriaComboBox = new Gtk.ComboBox.with_model (list_store);
+		this.criteriaComboBox = new Gtk.ComboBox.with_model (list_store);
 
 		Gtk.CellRendererText renderer = new Gtk.CellRendererText ();
 		criteriaComboBox.pack_start (renderer, true);
@@ -132,7 +135,7 @@ public class RulesWidget : Gtk.Box {
 		}
 
 		// The Box:
-		Gtk.ComboBox actionComboBox = new Gtk.ComboBox.with_model (list_store);
+		this.actionComboBox = new Gtk.ComboBox.with_model (list_store);
 
 		renderer = new Gtk.CellRendererText ();
 		actionComboBox.pack_start (renderer, true);
@@ -196,8 +199,11 @@ public class RulesWidget : Gtk.Box {
 		this.btnSaveFileRule = new Button.with_label("Save");
 		btnSaveFileRule.clicked.connect(this.btnSaveFileRuleClicked);
 
+		this.ruleMsgLabel = new Gtk.Label("");
+
 		fileRuleButtonsBox.pack_start(btnRemoveFileRule, false, true, 0);
 		fileRuleButtonsBox.pack_start(btnSaveFileRule, false, true, 0);
+		fileRuleButtonsBox.pack_start(ruleMsgLabel, false, true, 6);
 
 		fileRuleEditBox.pack_start(fileRuleButtonsBox, false, true, 0);
 
@@ -227,7 +233,7 @@ public class RulesWidget : Gtk.Box {
 		var treeSelection = this.tvFileRules.get_selection();
 		treeSelection.set_mode(SelectionMode.SINGLE);
 		treeSelection.changed.connect(() => {
-			this.fileExtRuleSelected();
+			this.fileRuleSelected();
 		});
 	}
 
@@ -235,6 +241,8 @@ public class RulesWidget : Gtk.Box {
 	 * 
 	 */
 	public void btnRemoveFileRuleClicked() {
+		this.ruleMsgLabel.label = "";
+		
 		string fileCriteriaString = getSelectedFileExt();
 
 		UserData.removeFileRule(UserData.currentMonitoredDir, fileCriteriaString);
@@ -251,31 +259,42 @@ public class RulesWidget : Gtk.Box {
 	 */
 	public void btnSaveFileRuleClicked() {
 		//UserData.addFileRule(UserData.currentMonitoredDir, this.txtFileNameContains.text, this.txtFileRuleDest.text);
+		this.ruleMsgLabel.label = "";
 
 		Zystem.debug("HEEYYYYY WAIT!");
+
+		bool looksGood = true;  // Benefit of the doubt.
 
 		RuleCriteria criteria = null;
 		RuleAction action = null;
 		if (this.selectedCriteriaType.toString() == UserData.filenameContainsCriteriaString) {
 			criteria = new FilenameContainsCriteria(this.txtFileNameContains.text);
 			Zystem.debug("Criteria created.");
+		} else {
+			looksGood = false;
 		}
 
 		if (this.selectedActionType.toString() == UserData.moveFileActionString) {
 			action = new MoveFileAction(this.txtFileRuleDest.text);
-			Zystem.debug("Action created.");
+			looksGood = FileUtility.directoryExists(this.txtFileRuleDest.text);
+			Zystem.debug("Action created: MoveFileAction " + looksGood.to_string());
 		} else if (this.selectedActionType.toString() == UserData.copyFileActionString) {
 			action = new CopyFileAction(this.txtFileRuleDest.text);
-			Zystem.debug("Action created.");
+			looksGood = FileUtility.directoryExists(this.txtFileRuleDest.text);
+			Zystem.debug("Action created: CopyFileAction " + looksGood.to_string());
 		} else if (this.selectedActionType.toString() == UserData.deleteFileActionString) {
 			action = new DeleteFileAction();
-			Zystem.debug("Action created.");
+			Zystem.debug("Action created: DeleteFileAction");
+		} else {
+			looksGood = false;
 		}
 
-		if (action != null && criteria != null) {
+		//if (looksGood && action != null && criteria != null) {
+		if (looksGood) {
 			UserData.addRule(new FileContainsRule(criteria, action));
 		} else {
 			Zystem.debug("HEEYYYYY WAIT! There is something null and the rule can't be added!");
+			this.ruleMsgLabel.label = "Error saving rule";
 		}
 		
 		this.txtFileNameContains.text = "";
@@ -305,6 +324,7 @@ public class RulesWidget : Gtk.Box {
 			fileExtList.append(rule.getCriteriaDisplayKey());
 		}
 
+		this.txtFileNameContains.text = ""; // Thest just need to be here for some reason.
 		this.txtFileRuleDest.text = "";
 	}
 
@@ -313,16 +333,29 @@ public class RulesWidget : Gtk.Box {
 	/**
 	 * This method is connected to the signal in the code when the settings window 
 	 * was created. 
-	 */
+	 *
 	private void fileExtRuleSelected() {
 		string fileExt = getSelectedFileExt();
 
 		this.txtFileNameContains.text = fileExt;
-		this.txtFileRuleDest.text = UserData.getFileRuleDest(UserData.currentMonitoredDir, fileExt);
-	}
+		this.txtFileRuleDest.text = UserData.getFileRuleDest(UserData.currentMonitoredDir, fileExt);				
+	}*/
 
 	private void fileRuleSelected() {
 		// This will be what really happens...
+		var rule = UserData.getRule(this.getSelectedFileExt());
+
+		this.txtFileNameContains.text = rule.criteria.getDisplayKey();
+		this.txtFileRuleDest.text = rule.action.getTextBox1();
+
+		int i = 0;
+		foreach (ActionType aType in ActionType.all()) {
+			if (aType == rule.action.kind) {
+				this.actionComboBox.set_active(i);
+				break;
+			}
+			i++;
+		}
 	}
 
 	/**

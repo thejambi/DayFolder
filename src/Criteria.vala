@@ -40,9 +40,6 @@ enum CriteriaType {
 
 interface RuleCriteria : GLib.Object {
 
-	//public abstract string criteriaString { get; protected set; }
-	//public abstract string displayKey { get; protected set; }
-
 	public abstract CriteriaType kind { get; protected set; }
 
 	public abstract bool fileMeetsCriteria(FileData file);

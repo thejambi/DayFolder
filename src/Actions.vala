@@ -56,6 +56,8 @@ interface RuleAction : GLib.Object {
 	public abstract string[] getStringList();
 
 	public abstract string getDisplayKey();
+
+	public abstract string getTextBox1();
 }
 
 /**
@@ -88,6 +90,7 @@ class MoveFileAction : Object, RuleAction {
 
 		// Only do action if destination file does not exist. We don't want to write over any files.
 		if (!destFile.query_exists()) {
+			FileUtility.createFolder(this.destinationDir);	// Make sure folder exists
 			return file.fileObject.move(destFile, FileCopyFlags.NONE);
 		}
 
@@ -99,7 +102,11 @@ class MoveFileAction : Object, RuleAction {
 	}
 
 	public string getDisplayKey() {
-		return "Move to " + destinationDir;
+		return "Move to " + this.destinationDir;
+	}
+
+	public string getTextBox1() {
+		return this.destinationDir;
 	}
 }
 
@@ -134,6 +141,7 @@ class CopyFileAction : Object, RuleAction {
 
 		// Only do action if destination file does not exist. We don't want to write over any files.
 		if (!destFile.query_exists()) {
+			FileUtility.createFolder(this.destinationDir);	// Make sure folder exists
 			return file.fileObject.copy(destFile, FileCopyFlags.NONE);
 		}
 
@@ -146,6 +154,10 @@ class CopyFileAction : Object, RuleAction {
 
 	public string getDisplayKey() {
 		return "Copy to " + destinationDir;
+	}
+
+	public string getTextBox1() {
+		return this.destinationDir;
 	}
 }
 
@@ -173,6 +185,10 @@ class DeleteFileAction : Object, RuleAction {
 
 	public string getDisplayKey() {
 		return "Delete";
+	}
+
+	public string getTextBox1() {
+		return "";
 	}
 }
 

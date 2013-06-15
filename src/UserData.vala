@@ -116,6 +116,10 @@ class UserData : GLib.Object {
 		}
 	}
 
+	public static bool canMonitorThisDir(string dirPath) {
+		return homeDirPath != dirPath && homeDirPath in dirPath;
+	}
+
 	/**
 	 * Add a monitored directory.
 	 */
@@ -191,6 +195,11 @@ class UserData : GLib.Object {
 		return monDir.getFileRuleDest(criteria);
 	}
 
+	public static Rule getRule(string criteria) {
+		var monDir = monitoredDirsMap.get(currentMonitoredDir);
+		return monDir.getRule(criteria);
+	}
+
 	/**
 	 * Set whether or not to move subfolders in given monitored directory.
 	 */
@@ -253,6 +262,16 @@ class UserData : GLib.Object {
 	public static string getDfType(string dirPath) {
 		MonitoredDirectory dir = monitoredDirsMap.get(dirPath);
 		return dir.dfType;
+	}
+
+	public static bool monDirIsHomeFolder() {
+		MonitoredDirectory dir = monitoredDirsMap.get(currentMonitoredDir);
+		return homeDirPath == dir.dirPath;
+	}
+
+	public static bool monDirIsSameAsDf() {
+		MonitoredDirectory dir = monitoredDirsMap.get(currentMonitoredDir);
+		return dir.dirPath == dir.dfRootPath;
 	}
 
 	/**

@@ -122,7 +122,11 @@ class MonitoredDirectory : Object {
 //~ 	}
 
 	public string getFileRuleDest(string criteria) {
-		return rulesMap.get(criteria).action.getDisplayKey();
+		return rulesMap.get(criteria).action.getTextBox1();
+	}
+
+	public Rule getRule(string criteria) {
+		return rulesMap.get(criteria);
 	}
 
 	/**

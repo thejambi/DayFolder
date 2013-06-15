@@ -55,6 +55,12 @@ class FileUtility : Object {
 
 		return pathPrefix + timestamp + fileExt;
 	}
+
+	public static bool directoryExists(string dirPath) {
+		Zystem.debug("Checking if " + dirPath + " is a directory");
+		var file = File.new_for_path(dirPath);
+		return dirPath.length > 1 && file.query_file_type(0) == FileType.DIRECTORY;
+	}
 	
 }
 
